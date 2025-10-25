@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 
 RANGE_SCRIPTS = [
+    r"Prep/Choose_Video.py",
     r"Prep/Clear_Folder.py",
     r"Video_to_Panorama/Rectangle_Tracking_Panorama.py",
     r"Image_Prep/Split_Panorama.py",

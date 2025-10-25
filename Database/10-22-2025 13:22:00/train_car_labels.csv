@@ -1,0 +1,18 @@
+filename,label,confidence,height,height_category
+car_01.jpg,Diesel Engine,0.3106203079223633,430,Short
+car_02.jpg,Diesel Engine,0.30305320739746094,431,Short
+car_03.jpg,Boxcar,0.30954132080078123,524,Tall
+car_04.jpg,Boxcar,0.2955015182495117,530,Tall
+car_05.jpg,Boxcar,0.2930431747436523,531,Tall
+car_06.jpg,Boxcar,0.31755752563476564,530,Tall
+car_07.jpg,Boxcar,0.3053691864013672,527,Tall
+car_08.jpg,Boxcar,0.315901985168457,529,Tall
+car_09.jpg,Boxcar,0.3358651351928711,530,Tall
+car_10.jpg,Boxcar,0.2869388961791992,531,Tall
+car_11.jpg,Short Boxcar,0.32984832763671873,478,Short
+car_12.jpg,Short Boxcar,0.3234469985961914,482,Short
+car_13.jpg,Short Boxcar,0.3377335357666016,474,Short
+car_14.jpg,Short Boxcar,0.3293928527832031,478,Short
+car_15.jpg,Short Boxcar,0.3332886505126953,471,Short
+car_16.jpg,Boxcar,0.33781780242919923,534,Tall
+car_17.jpg,Boxcar,0.3160635757446289,525,Tall
