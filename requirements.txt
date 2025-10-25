@@ -1,0 +1,9 @@
+#Make Panorama Requirements
+numpy
+opencv-python
+tqdm
+
+# Split Panorama Requirements
+pandas
+matplotlib
+scipy
