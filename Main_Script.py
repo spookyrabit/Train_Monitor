@@ -6,10 +6,12 @@ from datetime import datetime
 RANGE_SCRIPTS = [
     r"Prep/Choose_Video.py",
     r"Prep/Clear_Folder.py",
+    r"Prep/Align_Video.py",
     r"Video_to_Panorama/Rectangle_Tracking_Panorama.py",
     r"Image_Prep/Split_Panorama.py",
     r"Image_Prep/Crop_To_Car_Height.py",
-    r"Car_Proccessing/Label.py"
+    r"Car_Proccessing/Label.py",
+    r"Prep/Save_Train_Info.py"
  
 ]
 

@@ -3,3 +3,6 @@ TEMP
 
 #Video files
 *.mp4
+
+# Don't Commit Actual Data
+Database

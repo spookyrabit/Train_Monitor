@@ -11,11 +11,9 @@ if TEMP_FOLDER.exists() and TEMP_FOLDER.is_dir():
     shutil.rmtree(TEMP_FOLDER)
     print(f"Deleted existing folder: {TEMP_FOLDER}")
 
-
 # 2. Recreate TEMP folder
 TEMP_FOLDER.mkdir(parents=True, exist_ok=True)
 print(f"Created new folder: {TEMP_FOLDER}")
-
 
 # 3. Find the video that was copied (should only be one .mp4 file)
 videos = list(BASE_PATH.glob("*.mp4"))
@@ -40,4 +38,11 @@ new_video_path = BASE_PATH / "train.mp4"
 video_path.rename(new_video_path)
 print(f"Renamed video to: {new_video_path.name}")
 
-print("Setup complete. TEMP folder and Database structure ready.")
+# 6. Create TEMP/Video_Name.txt and write the video name into it
+video_name_file = TEMP_FOLDER / "Video_Name.txt"
+with open(video_name_file, "w") as f:
+    f.write(video_name)
+
+print(f"Created file: {video_name_file} (contains '{video_name}')")
+
+print("Setup complete. TEMP folder, Database structure, and video name file ready.")
