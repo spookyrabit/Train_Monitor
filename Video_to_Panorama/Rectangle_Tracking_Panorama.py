@@ -43,7 +43,7 @@ SCAN_X = 0.5
 BASE_STRIP_WIDTH = 35
 
 # Preview / debug
-SHOW_PREVIEW = True
+SHOW_PREVIEW = False
 PREVIEW_FPS = 30
 DRAW_MATCHES = True
 DRAW_RECTS = True

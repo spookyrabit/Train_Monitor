@@ -12,6 +12,7 @@ RANGE_SCRIPTS = [
     r"Image_Prep/Crop_To_Car_Height.py",
     r"Car_Proccessing/Label.py",
     r"Car_Proccessing/Read_IDs.py",
+    r"Tools/Show_Pictures.py",
     r"Prep/Save_Train_Info.py"
  
 ]

@@ -6,8 +6,11 @@ import torch
 import numpy as np
 import easyocr
 import re
+import sys
 
-# ========== GPU AUTO-FALLBACK HANDLER ==========
+# =======================================
+# GPU AUTO-FALLBACK HANDLER
+# =======================================
 def init_easyocr():
     use_gpu = False
     if torch.cuda.is_available():
@@ -34,42 +37,74 @@ def init_easyocr():
     print(f"✅ OCR Engine ready → {'GPU' if use_gpu else 'CPU'} mode")
     return reader
 
-
-# ========== SETTINGS ==========
+# =======================================
+# SETTINGS
+# =======================================
 INPUT_FOLDER = "TEMP/train_cars_cropped"
 LABELS_CSV = "TEMP/train_car_labels.csv"
 OUTPUT_FOLDER = "TEMP/train_cars_filtered"
 CSV_OUTPUT = "TEMP/Train_car_IDs.csv"
+
 REGION_FILE_MAIN = "Settings/car_ID_regions.json"
 REGION_FILE_SECOND = "Settings/car_ID_regions_second_location.json"
 RULES_FILE = "Settings/car_ID_rules.json"
 
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+os.makedirs("Settings", exist_ok=True)
 
-with open(REGION_FILE_MAIN, 'r') as f:
-    REGIONS_MAIN = json.load(f)
-with open(REGION_FILE_SECOND, 'r') as f:
-    REGIONS_SECOND = json.load(f)
-with open(RULES_FILE, 'r') as f:
-    RULES = json.load(f)
+# =======================================
+# SAFE LOAD JSON HELPERS
+# =======================================
+def safe_load_json(path, default):
+    if not os.path.exists(path):
+        print(f"[WARN] Missing {path} — creating default.")
+        with open(path, "w") as f:
+            json.dump(default, f, indent=2)
+        return default
+    try:
+        with open(path, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"[ERROR] Could not read {path}: {e} — using default.")
+        return default
+
+# Default fallbacks if settings are missing
+REGIONS_MAIN = safe_load_json(REGION_FILE_MAIN, {"Unknown": {"x1": 0.4, "y1": 0.4, "x2": 0.6, "y2": 0.6}})
+REGIONS_SECOND = safe_load_json(REGION_FILE_SECOND, {})
+RULES = safe_load_json(RULES_FILE, {"Unknown": {"regions_to_use": 1, "join_mode": "concat", "combine_strategy": "first"}})
 
 reader = init_easyocr()
 
-
-# ========== LOAD LABELS ==========
+# =======================================
+# LOAD LABELS (SAFE)
+# =======================================
 def load_labels(csv_path):
     label_map = {}
-    with open(csv_path, newline="") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            label_map[row["filename"].strip()] = row["label"].strip()
-    print(f"✅ Loaded {len(label_map)} label entries.")
+    if not os.path.exists(csv_path):
+        print(f"[WARN] Label file missing: {csv_path}. Creating placeholder.")
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+        with open(csv_path, "w", newline="") as f:
+            f.write("filename,label,confidence,height,height_category\n")
+        return label_map
+
+    try:
+        with open(csv_path, newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                fname = row.get("filename", "").strip()
+                label = row.get("label", "").strip() or "Unknown"
+                if fname:
+                    label_map[fname] = label
+        print(f"✅ Loaded {len(label_map)} label entries.")
+    except Exception as e:
+        print(f"[ERROR] Failed to read labels CSV: {e}")
     return label_map
 
 LABEL_MAP = load_labels(LABELS_CSV)
 
-
-# ========== REGION HANDLING ==========
+# =======================================
+# REGION HANDLING
+# =======================================
 def extract_text_regions(image, label):
     h, w = image.shape[:2]
     regions_to_check = []
@@ -84,11 +119,16 @@ def extract_text_regions(image, label):
 
     crops = []
     for r in regions_to_check:
-        x1, y1, x2, y2 = int(r["x1"] * w), int(r["y1"] * h), int(r["x2"] * w), int(r["y2"] * h)
-        crops.append(image[y1:y2, x1:x2])
-    return crops
+        try:
+            x1, y1, x2, y2 = int(r["x1"] * w), int(r["y1"] * h), int(r["x2"] * w), int(r["y2"] * h)
+            crops.append(image[y1:y2, x1:x2])
+        except Exception as e:
+            print(f"[WARN] Bad region for {label}: {e}")
+    return crops if crops else [image]  # fallback to whole image
 
-
+# =======================================
+# IMAGE PREPROCESSING
+# =======================================
 def preprocess_image(img, allow_color=False):
     if not allow_color:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -97,15 +137,16 @@ def preprocess_image(img, allow_color=False):
         return binary
     return img
 
-
-# ========== TEXT CLEANUP ==========
+# =======================================
+# TEXT CLEANUP
+# =======================================
 def clean_text(raw_text):
-    """Normalize OCR output for consistent ID formatting."""
     text = re.sub(r'[^A-Za-z0-9]+', '', raw_text)
-    return text
+    return text.strip()
 
-
-# ========== APPLY RULES ==========
+# =======================================
+# APPLY RULES
+# =======================================
 def apply_car_rules(label, raw_texts):
     rule = RULES.get(label, RULES.get("Unknown", {}))
     regions_to_use = rule.get("regions_to_use", len(raw_texts))
@@ -113,18 +154,19 @@ def apply_car_rules(label, raw_texts):
     combine_strategy = rule.get("combine_strategy", "all")
 
     selected_texts = raw_texts[:regions_to_use]
+    if not selected_texts:
+        return ""
 
     if combine_strategy == "first":
-        combined = selected_texts[0] if selected_texts else ""
+        combined = selected_texts[0]
     else:
-        if join_mode == "underscore":
-            combined = "_".join(selected_texts)
-        else:
-            combined = "".join(selected_texts)
+        combined = "_".join(selected_texts) if join_mode == "underscore" else "".join(selected_texts)
+
     return clean_text(combined)
 
-
-# ========== OCR PROCESS ==========
+# =======================================
+# OCR PROCESS
+# =======================================
 def process_car(filename, label):
     path = os.path.join(INPUT_FOLDER, filename)
     if not os.path.exists(path):
@@ -141,28 +183,38 @@ def process_car(filename, label):
 
     raw_texts = []
     for idx, crop in enumerate(crops):
-        proc = preprocess_image(crop, allow_color)
-        results = reader.readtext(proc)
-        merged_text = " ".join([t[1] for t in results])
-        raw_texts.append(merged_text)
+        try:
+            proc = preprocess_image(crop, allow_color)
+            results = reader.readtext(proc)
+            merged_text = " ".join([t[1] for t in results])
+            raw_texts.append(merged_text)
 
-        # Save overlay for debugging
-        debug = crop.copy()
-        for (bbox, text, conf) in results:
-            pts = np.array(bbox, dtype=np.int32)
-            cv2.polylines(debug, [pts], True, (0, 255, 0), 2)
-            cv2.putText(debug, text, (pts[0][0], pts[0][1] - 5),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-        cv2.imwrite(os.path.join(OUTPUT_FOLDER, f"{filename[:-4]}_region{idx+1}.jpg"), debug)
+            # Debug overlay
+            debug = crop.copy()
+            for (bbox, text, conf) in results:
+                pts = np.array(bbox, dtype=np.int32)
+                cv2.polylines(debug, [pts], True, (0, 255, 0), 2)
+                cv2.putText(debug, text, (pts[0][0], pts[0][1] - 5),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+            cv2.imwrite(os.path.join(OUTPUT_FOLDER, f"{filename[:-4]}_region{idx+1}.jpg"), debug)
+        except Exception as e:
+            print(f"[ERROR] OCR failure on {filename} region {idx+1}: {e}")
 
     final_id = apply_car_rules(label, raw_texts)
-    return final_id
+    return final_id or "UNKNOWN"
 
-
-# ========== MAIN ==========
+# =======================================
+# MAIN LOOP
+# =======================================
 def main():
     all_rows = []
-    image_files = sorted([f for f in os.listdir(INPUT_FOLDER) if f.lower().endswith(('.jpg', '.png'))])
+    try:
+        image_files = sorted([f for f in os.listdir(INPUT_FOLDER)
+                              if f.lower().endswith(('.jpg', '.png'))])
+    except Exception as e:
+        print(f"[FATAL] Could not list images: {e}")
+        image_files = []
+
     print(f"🟩 Processing {len(image_files)} cars...")
 
     for filename in image_files:
@@ -174,16 +226,24 @@ def main():
             all_rows.append([filename, label, id_text])
         except Exception as e:
             print(f"❌ Error on {filename}: {e}")
-            all_rows.append([filename, label, "" ])
+            all_rows.append([filename, label, "UNKNOWN"])
 
-    with open(CSV_OUTPUT, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["filename", "Car_Type", "ID"])
-        writer.writerows(all_rows)
+    # Always write a valid CSV
+    try:
+        with open(CSV_OUTPUT, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["filename", "Car_Type", "ID"])
+            writer.writerows(all_rows)
+        print(f"✅ Finished → {CSV_OUTPUT}")
+    except Exception as e:
+        print(f"[FATAL] Could not write output CSV: {e}")
+        os.makedirs(os.path.dirname(CSV_OUTPUT), exist_ok=True)
+        with open(CSV_OUTPUT, "w", newline="") as f:
+            f.write("filename,Car_Type,ID\n")
+        print(f"[INFO] Created empty fallback file → {CSV_OUTPUT}")
 
-    print(f"✅ Finished → {CSV_OUTPUT}")
     print(f"🖼️ Overlays saved → {OUTPUT_FOLDER}")
-
+    print("[INFO] Read_IDs.py finished (fail-safe mode)")
 
 if __name__ == "__main__":
     main()
