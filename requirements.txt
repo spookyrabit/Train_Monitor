@@ -7,3 +7,6 @@ tqdm
 pandas
 matplotlib
 scipy
+
+#Debug tools
+PyQt6

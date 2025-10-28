@@ -1,0 +1,32 @@
+{
+    "Diesel Engine": {
+        "regions_to_use": 1,
+        "allow_color": true,
+        "join_mode": "concat",
+        "combine_strategy": "first"
+    },
+    "Short Boxcar": {
+        "regions_to_use": 3,
+        "allow_color": false,
+        "join_mode": "concat",
+        "combine_strategy": "all"
+    },
+    "Boxcar": {
+        "regions_to_use": 5,
+        "allow_color": false,
+        "join_mode": "concat",
+        "combine_strategy": "all"
+    },
+    "Hopper": {
+        "regions_to_use": 2,
+        "allow_color": false,
+        "join_mode": "concat",
+        "combine_strategy": "all"
+    },
+    "Unknown": {
+        "regions_to_use": 2,
+        "allow_color": false,
+        "join_mode": "concat",
+        "combine_strategy": "all"
+    }
+}

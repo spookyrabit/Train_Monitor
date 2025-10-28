@@ -9,7 +9,7 @@ import os
 INPUT_PATH = "TEMP/train_panorama.jpg"
 OUTPUT_VIS = "TEMP/train_car_boundaries.jpg"
 OUTPUT_DIR = "TEMP/train_cars"
-OUTPUT_CSV = "TEMP/train_cars_metadata.csv"
+OUTPUT_CSV = "TEMP/split_metadata.csv"
 
 GAUSS_BLUR = 5
 SAVGOL_WINDOW = 101

@@ -22,7 +22,7 @@ BASE_STRIP_WIDTH = 37
 STRIP_MIN = 2
 STRIP_MAX = 75
 ADAPTIVE_K = 3.0
-TARGET_SPACING_PX = 1.0  # horizontal movement between frames in panorama
+TARGET_SPACING_PX = 0.0  # horizontal movement between frames in panorama
 
 MAX_FEATURES = 800
 FEATURE_QUALITY = 0.01

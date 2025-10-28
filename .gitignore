@@ -6,3 +6,5 @@ TEMP
 
 # Don't Commit Actual Data
 Database
+*.csv
+*.xlsx

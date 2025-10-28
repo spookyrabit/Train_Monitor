@@ -5,7 +5,9 @@ import shutil
 txt_file_path = "TEMP/Video_Name.txt"
 
 # List of files we want to move
-files_to_move = ["TEMP/train_car_labels.csv"]  # Add more file paths here if needed
+files_to_move = ["TEMP/train_car_labels.csv",
+                 "TEMP/Train_car_IDs.csv"
+                 ]  # Add more file paths here if needed
 
 # Read the folder name from the text file
 with open(txt_file_path, "r") as f:
